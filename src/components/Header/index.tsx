@@ -2,16 +2,31 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import ThemeToggler from "./ThemeToggler";
 import menuData from "./menuData";
 
 const Header = () => {
   // Navbar toggle
   const [navbarOpen, setNavbarOpen] = useState(false);
+  const navbarRef = useRef(null);
+
   const navbarToggleHandler = () => {
-    setNavbarOpen(!navbarOpen);
+    setNavbarOpen((prev) => !prev);
   };
+
+  // Close hamburger when clicking outside or on the cross button
+  // useEffect(() => {
+  //   const handleClickOutside = (event) => {
+  //     if (navbarRef.current && !navbarRef.current.contains(event.target)) {
+  //       setNavbarOpen(false);
+  //     }
+  //   };
+  //   window.addEventListener("mousedown", handleClickOutside);
+  //   return () => {
+  //     window.removeEventListener("mousedown", handleClickOutside);
+  //   };
+  // }, []);
 
   // Sticky Navbar
   const [sticky, setSticky] = useState(false);
@@ -42,9 +57,9 @@ const Header = () => {
     <>
       <header
         className={`header left-0 top-0 z-40 flex w-full items-center ${
-          !sticky ?
-            "absolute bg-transparent" :
-            "dark:bg-white dark:shadow-sticky-dark fixed z-[9999] bg-white !bg-opacity-80 shadow-sticky backdrop-blur-sm transition"  
+          !sticky
+            ? "absolute bg-transparent"
+            : "dark:bg-white dark:shadow-sticky-dark fixed z-[9999] bg-white !bg-opacity-80 shadow-sticky backdrop-blur-sm transition"
         }`}
       >
         <div className="container">
@@ -73,7 +88,14 @@ const Header = () => {
               </Link>
             </div>
             <div className="flex w-full items-center justify-between px-4">
-              <div>
+              <div className="flex items-center space-x-4">
+                <Link
+                  style={{ color: "black", fontWeight: "bolder" }}
+                  href="/signin"
+                  className="px-4 py-2 text-base font-medium text-dark hover:opacity-70 dark:text-white block lg:hidden"
+                >
+                  Sign In
+                </Link>
                 <button
                   onClick={navbarToggleHandler}
                   id="navbarToggler"
@@ -98,6 +120,7 @@ const Header = () => {
                 </button>
                 <nav
                   id="navbarCollapse"
+                  // ref={navbarRef}
                   className={`navbar absolute right-0 z-30 w-[250px] rounded border-[.5px] border-body-color/50 bg-white px-6 py-4 duration-300 dark:border-body-color/20 dark:bg-white lg:visible lg:static lg:w-auto lg:border-none lg:!bg-transparent lg:p-0 lg:opacity-100 ${
                     navbarOpen
                       ? "visibility top-full opacity-100"
@@ -109,7 +132,7 @@ const Header = () => {
                       <li key={index} className="group relative">
                         {menuItem.path ? (
                           <Link
-                            style={{color: "black", fontWeight: "bolder"}}
+                            style={{ color: "black", fontWeight: "bolder" }}
                             href={menuItem.path}
                             className={`flex py-2 text-base lg:mr-0 lg:inline-flex lg:px-0 lg:py-6 hover:opacity-70 ${
                               usePathName === menuItem.path
@@ -161,23 +184,19 @@ const Header = () => {
               </div>
               <div className="flex items-center justify-end pr-16 lg:pr-0">
                 <Link
-                  style={{color: "black", fontWeight: "bolder"}}
+                  style={{ color: "black", fontWeight: "bolder" }}
                   href="/signin"
                   className="hidden px-7 py-3 text-base font-medium text-dark hover:opacity-70 dark:text-white md:block"
                 >
                   Sign In
                 </Link>
                 <Link
-                  style={{color: "black", fontWeight: "bolder"}}
+                  style={{ color: "black", fontWeight: "bolder" }}
                   href="/signup"
                   className="hidden px-7 py-3 text-base font-medium text-dark hover:opacity-70 dark:text-white md:block"
-                  // className="ease-in-up shadow-btn hover:shadow-btn-hover hidden rounded-sm bg-white px-8 py-3 text-base font-medium text-white transition duration-300 hover:bg-opacity-90 md:block md:px-9 lg:px-6 xl:px-9"
                 >
                   Sign Up
                 </Link>
-                {/*<div>*/}
-                {/*  <ThemeToggler />*/}
-                {/*</div>*/}
               </div>
             </div>
           </div>
