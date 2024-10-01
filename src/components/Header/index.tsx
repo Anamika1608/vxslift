@@ -10,7 +10,7 @@ const Header = () => {
   // Navbar toggle
   const [navbarOpen, setNavbarOpen] = useState(false);
   const navbarRef = useRef(null);
-
+  const pathName = usePathname() ;
   const navbarToggleHandler = () => {
     setNavbarOpen((prev) => !prev);
   };
@@ -56,34 +56,34 @@ const Header = () => {
   return (
     <>
       <header
-        className={`header left-0 top-0 z-40 flex w-full items-center ${
+        className={`header left-0 top-0 -p-20 z-40 flex w-full items-center ${
           !sticky
             ? "absolute bg-transparent"
-            : "dark:bg-white dark:shadow-sticky-dark fixed z-[9999] bg-white !bg-opacity-80 shadow-sticky backdrop-blur-sm transition"
+            : " dark:bg-blue-300 dark:shadow-sticky-dark fixed z-[9999] bg-black !bg-opacity-80 shadow-sticky backdrop-blur-sm transition"
         }`}
       >
         <div className="container">
           <div className="relative -mx-4 flex items-center justify-between">
-            <div className="w-60 max-w-full px-4 xl:mr-12">
+            <div className="w-60 max-w-full px-4 xl:mr-12 py-8">
               <Link
                 href="/"
                 className={`header-logo block w-full ${
-                  sticky ? "py-5 lg:py-2" : "py-8"
+                  sticky ? "" : ""
                 } `}
               >
                 <Image
                   src="/images/logo/logo-2.svg"
                   alt="logo"
                   width={140}
-                  height={30}
+                  height={10}
                   className="w-full dark:hidden"
                 />
                 <Image
                   src="/images/logo/logo.png"
                   alt="logo"
-                  width={140}
-                  height={30}
-                  className="hidden w-full dark:block"
+                  width={110}
+                  height={25}
+                  className="hidden w-full scale-110 h-[30px] dark:block object-cover"
                 />
               </Link>
             </div>
@@ -92,7 +92,7 @@ const Header = () => {
                 <Link
                   style={{ color: "black", fontWeight: "bolder" }}
                   href="/signin"
-                  className="px-4 py-2 text-base font-medium text-dark hover:opacity-70 dark:text-white block lg:hidden"
+                  className="px-4 py-2 text-base font-medium text-dark hover:opacity-70 dark:text-white block md:hidden"
                 >
                   Sign In
                 </Link>
@@ -103,17 +103,17 @@ const Header = () => {
                   className="absolute right-4 top-1/2 block translate-y-[-50%] rounded-lg px-3 py-[6px] ring-primary focus:ring-2 lg:hidden"
                 >
                   <span
-                    className={`relative my-1.5 block h-0.5 w-[30px] bg-black transition-all duration-300 dark:bg-white ${
+                    className={`relative my-1.5 dark:text-black block h-0.5 w-[30px] bg-black transition-all duration-300 dark:bg-white ${
                       navbarOpen ? " top-[7px] rotate-45" : " "
                     }`}
                   />
                   <span
-                    className={`relative my-1.5 block h-0.5 w-[30px] bg-black transition-all duration-300 dark:bg-white ${
+                    className={`relative my-1.5 dark:text-black block h-0.5 w-[30px] bg-black transition-all duration-300 dark:bg-white ${
                       navbarOpen ? "opacity-0 " : " "
                     }`}
                   />
                   <span
-                    className={`relative my-1.5 block h-0.5 w-[30px] bg-black transition-all duration-300 dark:bg-white ${
+                    className={`relative my-1.5 dark:text-black block h-0.5 w-[30px] bg-black transition-all duration-300 dark:bg-white ${
                       navbarOpen ? " top-[-8px] -rotate-45" : " "
                     }`}
                   />
@@ -132,7 +132,7 @@ const Header = () => {
                       <li key={index} className="group relative">
                         {menuItem.path ? (
                           <Link
-                            style={{ color: "black", fontWeight: "bolder" }}
+                            style={{ color: pathName === "/" ? "black" : "white", fontWeight: "bolder" }}
                             href={menuItem.path}
                             className={`flex py-2 text-base lg:mr-0 lg:inline-flex lg:px-0 lg:py-6 hover:opacity-70 ${
                               usePathName === menuItem.path
@@ -184,14 +184,14 @@ const Header = () => {
               </div>
               <div className="flex items-center justify-end pr-16 lg:pr-0">
                 <Link
-                  style={{ color: "black", fontWeight: "bolder" }}
+                  style={{ color: pathName === "/" ? "black" : "white", fontWeight: "bolder" }}
                   href="/signin"
                   className="hidden px-7 py-3 text-base font-medium text-dark hover:opacity-70 dark:text-white md:block"
                 >
                   Sign In
                 </Link>
                 <Link
-                  style={{ color: "black", fontWeight: "bolder" }}
+                  style={{ color: pathName === "/" ? "black" : "white", fontWeight: "bolder" }}
                   href="/signup"
                   className="hidden px-7 py-3 text-base font-medium text-dark hover:opacity-70 dark:text-white md:block"
                 >
