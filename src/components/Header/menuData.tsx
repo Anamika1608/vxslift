@@ -19,6 +19,7 @@ const menuData: Menu[] = [
     path: "#pricing",
     newTab: false,
   },
+  
   // {
   //   id: 46,
   //   title: "Sign In ",
