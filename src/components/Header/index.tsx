@@ -6,10 +6,12 @@ import { useEffect, useState, useRef } from "react";
 import ThemeToggler from "./ThemeToggler";
 import menuData from "./menuData";
 import { useSession } from "next-auth/react";
+import axios from "axios";
 
 const Header = () => {
   // Navbar toggle
   const [navbarOpen, setNavbarOpen] = useState(false);
+  const [loggedIn , setLoggedIn] = useState(false);
   const navbarRef = useRef(null);
   const pathName = usePathname();
   const navbarToggleHandler = () => {
@@ -45,6 +47,23 @@ const Header = () => {
   useEffect(() => {
     window.addEventListener("scroll", handleStickyNavbar);
   });
+
+
+  const url = 'http://localhost:8000'
+
+  useEffect(() => {
+    const check = async () => {
+      try {
+        const response = await axios.post(`${url}/check_auth`, { withCredentials: true });
+        console.log(response.data);
+        setLoggedIn(response.data.isLoggedIn);
+      } catch (error) {
+        console.error('Error checking auth:', error);
+      }
+    };
+
+    check();
+  }, []);
 
   // submenu handler
   const [openIndex, setOpenIndex] = useState(-1);
@@ -186,7 +205,7 @@ const Header = () => {
                         href={status === "authenticated" ? "/my-account" : "/signin"}
                         className="flex py-4 text-base lg:mr-0 lg:inline-flex lg:px-0 lg:py-6 px-6 py-4 sm:text-black text-white"
                       >
-                        {status === "authenticated" ? "My Account" : "Sign in"}
+                        {(status === "authenticated" || loggedIn ) ? "My Account" : "Sign in"}
                       </Link>
                     </li>
 
@@ -201,7 +220,7 @@ const Header = () => {
                   // onClick={status === "authenticated" ? handleSignOut : null} 
                   className="hidden px-7 py-3 text-base font-medium text-dark hover:opacity-70 dark:text-white lg:block"
                 >
-                  {status === "authenticated" ? "My Account" : "Sign in"}
+                  {(status === "authenticated" || loggedIn) ? "My Account" : "Sign in"}
                 </Link>
                 {/* <Link
                   style={{ color: pathName === "/" ? "black" : "white", fontWeight: "bolder" }}
