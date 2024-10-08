@@ -10,6 +10,7 @@ import Pricing from "@/components/Pricing";
 import Testimonials from "@/components/Testimonials";
 import Video from "@/components/Video";
 import { Metadata } from "next";
+import dynamic from "next/dynamic";
 
 export const metadata: Metadata = {
   title: "Free Next.js Template for Startup and SaaS",
@@ -17,7 +18,7 @@ export const metadata: Metadata = {
   // other metadata
 };
 
-export default function Home() {
+const Home = ()=> {
   return (
     <>
       <ScrollUp />
@@ -34,3 +35,5 @@ export default function Home() {
     </>
   );
 }
+
+export default dynamic(()=> Promise.resolve(Home), {ssr: false})
