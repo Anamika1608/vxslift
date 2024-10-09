@@ -12,65 +12,115 @@ const PricingBox = (props: {
   subtitle: string;
   children: React.ReactNode;
 }) => {
-  const { status } = useSession();
+  const { data: session, status } = useSession();
   const { price, duration, packageName, subtitle, children } = props;
-  const [user, setUser] = useState(null);
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [userID, setUserID] = useState("");
+  const url = process.env.NEXT_PUBLIC_BACKEND_URL;
 
-  const url = 'http://localhost:8000';
+  const key_id = process.env.NEXT_PUBLIC_RAZORPAY_API_KEY;
+
+  const loadScript = (src: string) => {
+    return new Promise((resolve) => {
+      const script = document.createElement('script');
+      script.src = src;
+      script.onload = () => {
+        resolve(true);
+      };
+      script.onerror = () => {
+        resolve(false);
+      };
+      document.body.appendChild(script);
+    });
+  };
+
+  useEffect(() => {
+    loadScript('https://checkout.razorpay.com/v1/checkout.js');
+  }, []);
 
   useEffect(() => {
     const getUser = async () => {
-      try {
-        const response = await axios.get(`${url}/get_user`, {
-          withCredentials: true,
-        });
-        setUser(response.data);
-      } catch (err) {
-        console.error('Error fetching user:', err);
+      if (status === 'authenticated' && session?.user?.email) {
+        try {
+          const response = await axios.get(`${url}/get_user`, {
+            withCredentials: true
+          });
+          setUserID(response.data.id);
+        } catch (error) {
+          console.error('Error fetching user:', error);
+        }
       }
     };
     getUser();
-  }, []);
-  const key_id = process.env.RAZORPAY_API_KEY
+  }, [status, session, url]);
+
   const handlePayment = async (planPrice: string, packageName: string) => {
     if (status === 'unauthenticated') {
       router.push('/signin');
     } else {
       setIsLoading(true);
       try {
-        console.log("inside try and catch")
-        const { data: { order } } = await axios.post(`${url}/checkout`, { price: planPrice }, { withCredentials: true });
-
+        console.log("Creating order...");
         const options = {
-          key_id: key_id,
-          amount: order.amount,
-          currency: "INR",
-          name: "vxslift",
-          description: "Premium Plan Subscription",
-          order_id: order.id,
-          callback_url: "http://localhost:8000/paymentVerification",
-          prefill: {
-            name: user?.name || "Guest User", 
-            email: user?.email || "guest@example.com"
-          },
-          notes: {
-            address: "Razorpay Corporate Office"
-          },
-          theme: {
-            color: "#121212"
-          }
+          courseId: 1,
+          price: planPrice
         };
 
-        const razor = new window.Razorpay(options);
-        razor.open();
+        const res = await axios.post(`${url}/createOrder`, options, { withCredentials: true });
+        const data = res.data;
+
+        console.log("Order created:", data);
+        console.log(session.user)
+
+        const paymentObject = new (window as any).Razorpay({
+          key: key_id,
+          amount: data.amount,
+          currency: data.currency,
+          order_id: data.id,
+          name: "vxslift",
+          description: `Payment for ${packageName}`,
+          handler: function (response: any) {
+            console.log("Payment response:", response);
+            const verificationOptions = {
+              order_id: response.razorpay_order_id,
+              payment_id: response.razorpay_payment_id,
+              signature: response.razorpay_signature,
+              user_ID: userID
+            };
+            axios.post(`${url}/verifyPayment`, verificationOptions, { withCredentials: true })
+              .then((res) => {
+                console.log("Verification response:", res.data);
+                if (res.data.success) {
+                  alert("Payment successful");
+                } else {
+                  alert('Payment failed');
+                }
+              })
+              .catch((err) => {
+                console.error("Verification error:", err);
+                alert('Payment verification failed');
+              })
+              .finally(() => {
+                setIsLoading(false);
+              });
+          },
+          prefill: {
+            name: session?.user?.name || "",
+            email: session?.user?.email || ""
+          },
+          theme: {
+            color: "#3399cc"
+          }
+        });
+
+        paymentObject.open();
       } catch (err) {
-        console.error('Payment initiation error:', err);
-      } finally {
+        console.error('Error in creating order:', err);
+        alert('Failed to initiate payment. Please try again.');
         setIsLoading(false);
       }
-    } 
+    }
   };
 
   return (
@@ -103,4 +153,4 @@ const PricingBox = (props: {
   );
 };
 
-export default dynamic(()=> Promise.resolve(PricingBox), {ssr: false})
+export default dynamic(() => Promise.resolve(PricingBox), { ssr: false });

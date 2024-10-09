@@ -25,13 +25,6 @@ export default function RootLayout({
           <ScrollToTop />
         </Providers>
       </body>
-
-      <Script
-        src="https://checkout.razorpay.com/v1/checkout.js"
-        strategy="beforeInteractive"
-        onLoad={() => console.log('Razorpay SDK loaded successfully')}
-        onError={() => console.error('Razorpay SDK failed to load')}
-      />
     </html>
   );
 }
