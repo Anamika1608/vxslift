@@ -1,3 +1,10 @@
+'use client';
+import axios from "axios";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import React, { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
+
 const PricingBox = (props: {
   price: string;
   duration: string;
@@ -5,7 +12,116 @@ const PricingBox = (props: {
   subtitle: string;
   children: React.ReactNode;
 }) => {
+  const { data: session, status } = useSession();
   const { price, duration, packageName, subtitle, children } = props;
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
+  const [userID, setUserID] = useState("");
+  const url = process.env.NEXT_PUBLIC_BACKEND_URL;
+
+  const key_id = process.env.NEXT_PUBLIC_RAZORPAY_API_KEY;
+
+  const loadScript = (src: string) => {
+    return new Promise((resolve) => {
+      const script = document.createElement('script');
+      script.src = src;
+      script.onload = () => {
+        resolve(true);
+      };
+      script.onerror = () => {
+        resolve(false);
+      };
+      document.body.appendChild(script);
+    });
+  };
+
+  useEffect(() => {
+    loadScript('https://checkout.razorpay.com/v1/checkout.js');
+  }, []);
+
+  useEffect(() => {
+    const getUser = async () => {
+      if (status === 'authenticated' && session?.user?.email) {
+        try {
+          const response = await axios.get(`${url}/get_user`, {
+            withCredentials: true
+          });
+          setUserID(response.data.id);
+        } catch (error) {
+          console.error('Error fetching user:', error);
+        }
+      }
+    };
+    getUser();
+  }, [status, session, url]);
+
+  const handlePayment = async (planPrice: string, packageName: string) => {
+    if (status === 'unauthenticated') {
+      router.push('/signin');
+    } else {
+      setIsLoading(true);
+      try {
+        console.log("Creating order...");
+        const options = {
+          courseId: 1,
+          price: planPrice
+        };
+
+        const res = await axios.post(`${url}/createOrder`, options, { withCredentials: true });
+        const data = res.data;
+
+        console.log("Order created:", data);
+        console.log(session.user)
+
+        const paymentObject = new (window as any).Razorpay({
+          key: key_id,
+          amount: data.amount,
+          currency: data.currency,
+          order_id: data.id,
+          name: "vxslift",
+          description: `Payment for ${packageName}`,
+          handler: function (response: any) {
+            console.log("Payment response:", response);
+            const verificationOptions = {
+              order_id: response.razorpay_order_id,
+              payment_id: response.razorpay_payment_id,
+              signature: response.razorpay_signature,
+              user_ID: userID
+            };
+            axios.post(`${url}/verifyPayment`, verificationOptions, { withCredentials: true })
+              .then((res) => {
+                console.log("Verification response:", res.data);
+                if (res.data.success) {
+                  alert("Payment successful");
+                } else {
+                  alert('Payment failed');
+                }
+              })
+              .catch((err) => {
+                console.error("Verification error:", err);
+                alert('Payment verification failed');
+              })
+              .finally(() => {
+                setIsLoading(false);
+              });
+          },
+          prefill: {
+            name: session?.user?.name || "",
+            email: session?.user?.email || ""
+          },
+          theme: {
+            color: "#3399cc"
+          }
+        });
+
+        paymentObject.open();
+      } catch (err) {
+        console.error('Error in creating order:', err);
+        alert('Failed to initiate payment. Please try again.');
+        setIsLoading(false);
+      }
+    }
+  };
 
   return (
     <div className="w-full">
@@ -23,58 +139,18 @@ const PricingBox = (props: {
         </div>
         <p className="mb-7 text-base text-body-color">{subtitle}</p>
         <div className="mb-8 border-b border-body-color border-opacity-10 pb-8 dark:border-white dark:border-opacity-10">
-          <button className="flex w-full items-center justify-center rounded-sm bg-primary p-3 text-base font-semibold text-white transition duration-300 ease-in-out hover:bg-opacity-80 hover:shadow-signUp">
-            Book Now
+          <button
+            onClick={() => handlePayment(price, packageName)}
+            disabled={isLoading}
+            className={`flex w-full items-center justify-center rounded-sm bg-primary p-3 text-base font-semibold text-white transition duration-300 ease-in-out hover:bg-opacity-80 hover:shadow-signUp ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+          >
+            {isLoading ? 'Processing...' : 'Book Now'}
           </button>
         </div>
         <div>{children}</div>
-        {/*<div className="absolute bottom-0 right-0 z-[-1]">*/}
-        {/*  <svg*/}
-        {/*    width="179"*/}
-        {/*    height="158"*/}
-        {/*    viewBox="0 0 179 158"*/}
-        {/*    fill="none"*/}
-        {/*    xmlns="http://www.w3.org/2000/svg"*/}
-        {/*  >*/}
-        {/*    <path*/}
-        {/*      opacity="0.5"*/}
-        {/*      d="M75.0002 63.256C115.229 82.3657 136.011 137.496 141.374 162.673C150.063 203.47 207.217 197.755 202.419 167.738C195.393 123.781 137.273 90.3579 75.0002 63.256Z"*/}
-        {/*      fill="url(#paint0_linear_70:153)"*/}
-        {/*    />*/}
-        {/*    <path*/}
-        {/*      opacity="0.3"*/}
-        {/*      d="M178.255 0.150879C129.388 56.5969 134.648 155.224 143.387 197.482C157.547 265.958 65.9705 295.709 53.1024 246.401C34.2588 174.197 100.939 83.7223 178.255 0.150879Z"*/}
-        {/*      fill="url(#paint1_linear_70:153)"*/}
-        {/*    />*/}
-        {/*    <defs>*/}
-        {/*      <linearGradient*/}
-        {/*        id="paint0_linear_70:153"*/}
-        {/*        x1="69.6694"*/}
-        {/*        y1="29.9033"*/}
-        {/*        x2="196.108"*/}
-        {/*        y2="83.2919"*/}
-        {/*        gradientUnits="userSpaceOnUse"*/}
-        {/*      >*/}
-        {/*        <stop stopColor="#4A6CF7" stopOpacity="0.62" />*/}
-        {/*        <stop offset="1" stopColor="#4A6CF7" stopOpacity="0" />*/}
-        {/*      </linearGradient>*/}
-        {/*      <linearGradient*/}
-        {/*        id="paint1_linear_70:153"*/}
-        {/*        x1="165.348"*/}
-        {/*        y1="-75.4466"*/}
-        {/*        x2="-3.75136"*/}
-        {/*        y2="103.645"*/}
-        {/*        gradientUnits="userSpaceOnUse"*/}
-        {/*      >*/}
-        {/*        <stop stopColor="#4A6CF7" stopOpacity="0.62" />*/}
-        {/*        <stop offset="1" stopColor="#4A6CF7" stopOpacity="0" />*/}
-        {/*      </linearGradient>*/}
-        {/*    </defs>*/}
-        {/*  </svg>*/}
-        {/*</div>*/}
       </div>
     </div>
   );
 };
 
-export default PricingBox;
+export default dynamic(() => Promise.resolve(PricingBox), { ssr: false });
