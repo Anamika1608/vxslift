@@ -23,6 +23,7 @@ const SignupPage = () => {
       );
 
       if (response.status === 201) {
+        alert("You have successfully registered")
         router.push("/");
       } else {
         console.error("Unexpected response:", response);

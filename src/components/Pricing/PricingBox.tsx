@@ -4,7 +4,6 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import React, { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
-
 const PricingBox = (props: {
   price: string;
   duration: string;
@@ -21,27 +20,28 @@ const PricingBox = (props: {
 
   const key_id = process.env.NEXT_PUBLIC_RAZORPAY_API_KEY;
 
-  const loadScript = (src: string) => {
-    return new Promise((resolve) => {
-      const script = document.createElement('script');
-      script.src = src;
-      script.onload = () => {
-        resolve(true);
-      };
-      script.onerror = () => {
-        resolve(false);
-      };
-      document.body.appendChild(script);
-    });
-  };
-
   useEffect(() => {
+    const loadScript = (src: string) => {
+      return new Promise((resolve) => {
+        const script = document.createElement('script');
+        script.src = src;
+        script.onload = () => {
+          resolve(true);
+        };
+        script.onerror = () => {
+          resolve(false);
+        };
+        document.body.appendChild(script);
+      });
+    };
+
     loadScript('https://checkout.razorpay.com/v1/checkout.js');
   }, []);
 
+  
   useEffect(() => {
     const getUser = async () => {
-      if (status === 'authenticated' && session?.user?.email) {
+      if (!session?.user) {  
         try {
           const response = await axios.get(`${url}/get_user`, {
             withCredentials: true
@@ -50,13 +50,27 @@ const PricingBox = (props: {
         } catch (error) {
           console.error('Error fetching user:', error);
         }
+      } else {
+        try {
+          const response = await axios.get(`${url}/findUserByMail`, {
+            params: {mail : session.user.email} ,
+            withCredentials: true
+          });
+          setUserID(response.data.userId);
+        } catch (error) {
+          console.error('Error fetching user by mail:', error);
+        }
       }
     };
-    getUser();
-  }, [status, session, url]);
+  
+    if (!userID) {  // Only call getUser if userID is not already set
+      getUser();
+    }
+  }, [session, url, userID]);  // Add dependencies to avoid infinite re-renders
+  
 
   const handlePayment = async (planPrice: string, packageName: string) => {
-    if (status === 'unauthenticated') {
+    if (!userID) {
       router.push('/signin');
     } else {
       setIsLoading(true);
@@ -64,15 +78,13 @@ const PricingBox = (props: {
         console.log("Creating order...");
         const options = {
           courseId: 1,
-          price: planPrice
+          price: planPrice,
         };
-
+  
         const res = await axios.post(`${url}/createOrder`, options, { withCredentials: true });
         const data = res.data;
-
         console.log("Order created:", data);
-        console.log(session.user)
-
+  
         const paymentObject = new (window as any).Razorpay({
           key: key_id,
           amount: data.amount,
@@ -86,42 +98,51 @@ const PricingBox = (props: {
               order_id: response.razorpay_order_id,
               payment_id: response.razorpay_payment_id,
               signature: response.razorpay_signature,
-              user_ID: userID
+              user_ID: userID,
+              packageName: packageName,
             };
-            axios.post(`${url}/verifyPayment`, verificationOptions, { withCredentials: true })
+            axios
+              .post(`${url}/verifyPayment`, verificationOptions, { withCredentials: true })
               .then((res) => {
                 console.log("Verification response:", res.data);
                 if (res.data.success) {
                   alert("Payment successful");
                 } else {
-                  alert('Payment failed');
+                  alert("Payment failed");
                 }
               })
               .catch((err) => {
                 console.error("Verification error:", err);
-                alert('Payment verification failed');
+                alert("Payment verification failed");
               })
               .finally(() => {
-                setIsLoading(false);
+                setIsLoading(false); 
               });
           },
           prefill: {
             name: session?.user?.name || "",
-            email: session?.user?.email || ""
+            email: session?.user?.email || "",
           },
           theme: {
-            color: "#3399cc"
-          }
+            color: "#3399cc",
+          },
         });
-
+  
+        paymentObject.on('payment.failed', function (response: any) {
+          console.error("Payment failed:", response.error);
+          alert('Payment failed. Please try again.');
+          setIsLoading(false); // Reset loading state on payment failure
+        });
+  
         paymentObject.open();
       } catch (err) {
-        console.error('Error in creating order:', err);
-        alert('Failed to initiate payment. Please try again.');
+        console.error("Error in creating order:", err);
+        alert("Failed to initiate payment. Please try again.");
         setIsLoading(false);
       }
     }
   };
+  
 
   return (
     <div className="w-full">
@@ -141,10 +162,10 @@ const PricingBox = (props: {
         <div className="mb-8 border-b border-body-color border-opacity-10 pb-8 dark:border-white dark:border-opacity-10">
           <button
             onClick={() => handlePayment(price, packageName)}
-            disabled={isLoading}
-            className={`flex w-full items-center justify-center rounded-sm bg-primary p-3 text-base font-semibold text-white transition duration-300 ease-in-out hover:bg-opacity-80 hover:shadow-signUp ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+            
+            className={`flex w-full items-center justify-center rounded-sm bg-primary p-3 text-base font-semibold text-white transition duration-300 ease-in-out hover:bg-opacity-80 hover:shadow-signUp ` }
           >
-            {isLoading ? 'Processing...' : 'Book Now'}
+            { 'Book Now'}
           </button>
         </div>
         <div>{children}</div>

@@ -7,7 +7,7 @@ import axios from "axios";
 import { useEffect , useState} from 'react';
 import { redirect, useRouter } from 'next/navigation';
 
-const url = 'http://localhost:8000'
+const url = process.env.NEXT_PUBLIC_BACKEND_URL
 
 const SigninPage = () => {
   const router = useRouter();
@@ -23,10 +23,26 @@ const SigninPage = () => {
     }
   }, [status, session]);
 
+  useEffect(() => {
+    if (status === 'authenticated' && session) {
+      router.push('/');
+    }
+  }, [status, session]);
+  
   const handleSignin = async () => {
     setIsLoading(true);
-    await signIn('google');
+    try {
+      const result = await signIn('google', { redirect: false });
+      if (!result?.ok) {
+        console.error('Failed to sign in');
+      }
+    } catch (error) {
+      console.error('Error during sign in:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
+  
 
   const handleLogin = async ()=>{
     try {
