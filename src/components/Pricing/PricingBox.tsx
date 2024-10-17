@@ -109,19 +109,19 @@ const PricingBox = (props: {
               .then((res) => {
                 console.log("Verification response:", res.data);
                 if (res.data.success) {
-                  
-                  redirect("https://docs.google.com/forms/d/1ZS5A31KR0cwtb1qAp-e6m1sxId4AARy0PDoEtO0YypQ/viewform?edit_requested=true")
+                  router.push("https://docs.google.com/forms/d/1ZS5A31KR0cwtb1qAp-e6m1sxId4AARy0PDoEtO0YypQ/viewform?edit_requested=true")
+                  toast.success('Payment successful!');
                 } else {
+                  console.log("redirection failed")
                   toast.error('Payment Failed !');
                 }
               })
               .catch((err) => {
-                toast.error('Payment failed. Please try again !');
                 console.error("Verification error:", err);
                   toast.error('Payment Failed !');
               })
               .finally(() => {
-                toast.success('Payment successfull !');
+                // toast.success('Payment successful !');
                 setIsLoading(false);
               });
           },

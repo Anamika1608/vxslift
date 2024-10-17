@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { Metadata } from "next";
 import axios from "axios";
 import { useState } from "react";
-
+import { toast } from 'react-hot-toast';
 const url = 'http://localhost:8000'
 
 const SignupPage = () => {
@@ -23,12 +23,13 @@ const SignupPage = () => {
       );
 
       if (response.status === 201) {
-        alert("You have successfully registered")
+        toast.success('You have successfully registered'); 
         router.push("/");
       } else {
         console.error("Unexpected response:", response);
       }
     } catch (error) {
+      toast.success('Error in registering the user !'); 
       console.log(error);
       console.error("Error registering user:", error.response?.data || error.message);
     }

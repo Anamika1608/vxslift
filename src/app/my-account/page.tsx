@@ -1,13 +1,11 @@
-'use client';
-
-import { signOut } from "next-auth/react";
+"use client"
+import React, { useEffect, useState } from 'react';
+import { signOut, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
 import axios from "axios";
-import { useSession } from "next-auth/react";
 import { toast } from 'react-hot-toast';
 
-function AccountPage() {
+const AccountPage = () => {
     const url = process.env.NEXT_PUBLIC_BACKEND_URL;
     const router = useRouter();
     const [user, setUser] = useState(false);
@@ -38,6 +36,8 @@ function AccountPage() {
                         withCredentials: true,
                     });
                     setUserID(response.data.id);
+                    setUser(true);
+                    setLoggedIn(true);
                 } catch (error) {
                     console.error('Error fetching user:', error);
                 }
@@ -48,46 +48,27 @@ function AccountPage() {
                         withCredentials: true,
                     });
                     setUserID(response.data.userId);
+                    setUser(true);
+                    setLoggedIn(true);
                 } catch (error) {
                     console.error('Error fetching user by mail:', error);
                 }
             }
         };
 
-        if (!userID) {
-            getUser();
-        }
-    }, [session, url, userID]);
-
-    useEffect(() => {
-        const checkAuth = async () => {
-            try {
-                const response = await axios.get(`${url}/get_user`, {
-                    withCredentials: true,
-                });
-                if (response.data) {
-                    setUser(true);
-                    setLoggedIn(true);
-                }
-            } catch (error) {
-                console.error('Error checking auth:', error);
-            }
-        };
-
-        checkAuth();
-    }, [setLoggedIn, url]);
+        getUser();
+    }, [session, url]);
 
     const handleSignOut = async (e) => {
         e.preventDefault();
         if (user) {
             try {
-                const response = await axios.get(`${url}/logout`);
-                toast.success('Logged out successfully !');
+                await axios.get(`${url}/logout`);
                 setLoggedIn(false);
-                console.log(response.data);
+                toast.success('Logged out successfully!');
                 router.push('/');
             } catch (error) {
-                toast.error('Error in logging out !');
+                toast.error('Error in logging out!');
                 console.error('Error during logout:', error);
             }
         } else {
@@ -96,34 +77,42 @@ function AccountPage() {
                 signOut({
                     callbackUrl: '/',
                 });
-            }, 500);  
+            }, 1000);  
         }
-        
     };
 
     return (
-        <div className="mt-44">
-            <h1>Your Account</h1>
+        <div className="container mx-auto px-4 py-8 mt-16">
+            <h1 className="text-3xl font-bold mb-8 text-gray-300">Your Purchased Plans</h1>
 
-            <div className="purchased-plans">
-                <h2>Purchased Plans</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                 {purchasedPlans.length > 0 ? (
                     purchasedPlans.map((plan) => (
-                        <div key={plan._id} className="plan-card">
-                            <h3>{plan.name}</h3>
-                            <p>Price: ${plan.price}</p>
+                        <div key={plan._id} className="bg-gray-700 rounded-lg shadow-md p-6 transition duration-300 ease-in-out hover:shadow-lg">
+                            <h3 className="text-xl font-semibold mb-2 text-white">{plan.name}</h3>
+                            <p className="text-gray-300">Price: {plan.pricing} Rs</p>
                         </div>
                     ))
                 ) : (
-                    <p>No purchased plans found.</p>
+                    <div className="col-span-full bg-white rounded-lg shadow-md p-8 text-center">
+                        <p className="text-gray-600 text-lg">No purchased plans found.</p>
+                    </div>
                 )}
             </div>
 
-            <button onClick={handleSignOut} className="sign-out-button">
+            <button 
+                onClick={handleSignOut} 
+                className="w-full md:w-auto bg-red-600 text-white px-6 py-2 rounded-md font-semibold flex items-center justify-center hover:bg-red-700 transition duration-300 ease-in-out"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
                 Sign out
             </button>
         </div>
     );
-}
+};
 
 export default AccountPage;

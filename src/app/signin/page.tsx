@@ -68,6 +68,7 @@ const SigninPage = () => {
       }, { withCredentials: true });
 
       if (res.data.success) {
+        toast.success('Logged in successfully !'); 
         router.push("/");
       } else {
         // toast.error('Failed to login with Google'); 
@@ -77,7 +78,6 @@ const SigninPage = () => {
       toast.error('Failed to login with Google'); 
       console.error("An error occurred during login:", error);
     } finally {
-      toast.success('Logged in successfully !'); 
       setIsLoading(false);
     }
   };

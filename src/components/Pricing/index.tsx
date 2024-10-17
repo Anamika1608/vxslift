@@ -131,7 +131,7 @@ const Pricing = () => {
               {purchasedPlans[plan._id] && (
                 <div className="text-green-600 mt-4">
                   You have already purchased this plan.
-                  Check in <a href="/my-account">My Account</a>
+                  Check in <a href="/my-account" className="underline">My Account</a>
                 </div>
               )}
             </PricingBox>
