@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import axios from "axios";
 import { useEffect , useState} from 'react';
 import { redirect, useRouter } from 'next/navigation';
+import { toast } from 'react-hot-toast';
 
 const url = process.env.NEXT_PUBLIC_BACKEND_URL
 
@@ -48,10 +49,12 @@ const SigninPage = () => {
     try {
       const response = await axios.post(`${url}/login` , {email,password},{withCredentials : true})
       if(response.status == 200) {
+        toast.success('Logged in successfully !'); 
         setLoggedIn(true)
         router.push('/')
       }
     } catch (error) {
+      toast.error('Wrong email or password'); 
       console.log("Error in getting logged in") 
     }
   }
@@ -67,11 +70,14 @@ const SigninPage = () => {
       if (res.data.success) {
         router.push("/");
       } else {
+        // toast.error('Failed to login with Google'); 
         console.error("Login failed:", res.data.message);
       }
     } catch (error) {
+      toast.error('Failed to login with Google'); 
       console.error("An error occurred during login:", error);
     } finally {
+      toast.success('Logged in successfully !'); 
       setIsLoading(false);
     }
   };

@@ -1,9 +1,11 @@
 'use client';
 import axios from "axios";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { redirect, useRouter } from "next/navigation";
 import React, { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
+import { toast } from 'react-hot-toast';
+
 const PricingBox = (props: {
   price: string;
   duration: string;
@@ -38,10 +40,10 @@ const PricingBox = (props: {
     loadScript('https://checkout.razorpay.com/v1/checkout.js');
   }, []);
 
-  
+
   useEffect(() => {
     const getUser = async () => {
-      if (!session?.user) {  
+      if (!session?.user) {
         try {
           const response = await axios.get(`${url}/get_user`, {
             withCredentials: true
@@ -53,7 +55,7 @@ const PricingBox = (props: {
       } else {
         try {
           const response = await axios.get(`${url}/findUserByMail`, {
-            params: {mail : session.user.email} ,
+            params: { mail: session.user.email },
             withCredentials: true
           });
           setUserID(response.data.userId);
@@ -62,12 +64,12 @@ const PricingBox = (props: {
         }
       }
     };
-  
-    if (!userID) {  // Only call getUser if userID is not already set
+
+    if (!userID) {  
       getUser();
     }
-  }, [session, url, userID]);  // Add dependencies to avoid infinite re-renders
-  
+  }, [session, url, userID]); 
+
 
   const handlePayment = async (planPrice: string, packageName: string) => {
     if (!userID) {
@@ -76,15 +78,16 @@ const PricingBox = (props: {
       setIsLoading(true);
       try {
         console.log("Creating order...");
+        console.log(planPrice)
         const options = {
           courseId: 1,
           price: planPrice,
         };
-  
+
         const res = await axios.post(`${url}/createOrder`, options, { withCredentials: true });
         const data = res.data;
         console.log("Order created:", data);
-  
+
         const paymentObject = new (window as any).Razorpay({
           key: key_id,
           amount: data.amount,
@@ -106,17 +109,20 @@ const PricingBox = (props: {
               .then((res) => {
                 console.log("Verification response:", res.data);
                 if (res.data.success) {
-                  alert("Payment successful");
+                  
+                  redirect("https://docs.google.com/forms/d/1ZS5A31KR0cwtb1qAp-e6m1sxId4AARy0PDoEtO0YypQ/viewform?edit_requested=true")
                 } else {
-                  alert("Payment failed");
+                  toast.error('Payment Failed !');
                 }
               })
               .catch((err) => {
+                toast.error('Payment failed. Please try again !');
                 console.error("Verification error:", err);
-                alert("Payment verification failed");
+                  toast.error('Payment Failed !');
               })
               .finally(() => {
-                setIsLoading(false); 
+                toast.success('Payment successfull !');
+                setIsLoading(false);
               });
           },
           prefill: {
@@ -127,22 +133,25 @@ const PricingBox = (props: {
             color: "#3399cc",
           },
         });
-  
+
         paymentObject.on('payment.failed', function (response: any) {
           console.error("Payment failed:", response.error);
-          alert('Payment failed. Please try again.');
-          setIsLoading(false); // Reset loading state on payment failure
+          toast.error('Payment Failed . Please try again!');
+
+          setIsLoading(false); 
         });
-  
+
         paymentObject.open();
       } catch (err) {
+        console.log(err)
         console.error("Error in creating order:", err);
-        alert("Failed to initiate payment. Please try again.");
+        toast.error('Failed to initiate the payment!');
+
         setIsLoading(false);
       }
     }
   };
-  
+
 
   return (
     <div className="w-full">
@@ -162,10 +171,10 @@ const PricingBox = (props: {
         <div className="mb-8 border-b border-body-color border-opacity-10 pb-8 dark:border-white dark:border-opacity-10">
           <button
             onClick={() => handlePayment(price, packageName)}
-            
-            className={`flex w-full items-center justify-center rounded-sm bg-primary p-3 text-base font-semibold text-white transition duration-300 ease-in-out hover:bg-opacity-80 hover:shadow-signUp ` }
+
+            className={`flex w-full items-center justify-center rounded-sm bg-primary p-3 text-base font-semibold text-white transition duration-300 ease-in-out hover:bg-opacity-80 hover:shadow-signUp `}
           >
-            { 'Book Now'}
+            {'Book Now'}
           </button>
         </div>
         <div>{children}</div>

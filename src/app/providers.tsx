@@ -5,11 +5,16 @@ import { SessionProvider } from "next-auth/react"
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <SessionProvider>
+    
+ <SessionProvider>
+
       <ThemeProvider attribute="class" enableSystem={false} defaultTheme="dark">
         {children}
       </ThemeProvider>
+
     </SessionProvider>
+
+   
 
   );
 }

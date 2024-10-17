@@ -4,12 +4,45 @@ import SectionTitle from "../Common/SectionTitle";
 import OfferList from "./OfferList";
 import PricingBox from "./PricingBox";
 import axios from "axios";
+import { useSession } from "next-auth/react";
 
 const Pricing = () => {
   const url = process.env.NEXT_PUBLIC_BACKEND_URL;
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [userID, setUserID] = useState("");
+  const [purchasedPlans, setPurchasedPlans] = useState({});
+  const { data: session, status } = useSession();
+
+  useEffect(() => {
+    const getUser = async () => {
+      if (!session?.user) {
+        try {
+          const response = await axios.get(`${url}/get_user`, {
+            withCredentials: true,
+          });
+          setUserID(response.data.id);
+        } catch (error) {
+          console.error("Error fetching user:", error);
+        }
+      } else {
+        try {
+          const response = await axios.get(`${url}/findUserByMail`, {
+            params: { mail: session.user.email },
+            withCredentials: true,
+          });
+          setUserID(response.data.userId);
+        } catch (error) {
+          console.error("Error fetching user by mail:", error);
+        }
+      }
+    };
+
+    if (!userID) {
+      getUser();
+    }
+  }, [session, url, userID]);
 
   useEffect(() => {
     const getPlans = async () => {
@@ -25,6 +58,34 @@ const Pricing = () => {
     };
     getPlans();
   }, [url]);
+
+ 
+  const checkPurchased = async (planId) => {
+    try {
+      const response = await axios.post(`${url}/checkPurchasedPlan`, {
+        plan_id: planId,
+        user_id: userID,
+      });
+      return response.data.purchased; 
+    } catch (error) {
+      console.error("Error checking purchased plan:", error);
+      return false;
+    }
+  };
+
+  useEffect(() => {
+    const checkAllPurchasedPlans = async () => {
+      if (userID && plans.length > 0) {
+        const purchasedStatus = {};
+        for (const plan of plans) {
+          purchasedStatus[plan._id] = await checkPurchased(plan._id);
+        }
+        setPurchasedPlans(purchasedStatus);
+      }
+    };
+
+    checkAllPurchasedPlans();
+  }, [plans, userID]);
 
   if (loading) return <div>Loading pricing plans...</div>;
   if (error) return <div>{error}</div>;
@@ -66,6 +127,13 @@ const Pricing = () => {
                 text="Free Lifetime Updates"
                 status={index === 2 ? "active" : "inactive"}
               />
+
+              {purchasedPlans[plan._id] && (
+                <div className="text-green-600 mt-4">
+                  You have already purchased this plan.
+                  Check in <a href="/my-account">My Account</a>
+                </div>
+              )}
             </PricingBox>
           ))}
         </div>

@@ -27,13 +27,11 @@ const Header = () => {
     }
   };
   const { data: session, status } = useSession();
-  // if(status == "loading") return (<Loader/>)
 
 
   useEffect(() => {
     window.addEventListener("scroll", handleStickyNavbar);
   });
-
 
   const url = process.env.NEXT_PUBLIC_BACKEND_URL
 
@@ -43,39 +41,13 @@ const Header = () => {
         const response = await axios.get(`${url}/get_user`, {
           withCredentials: true
         })
-        if (response.data) setLoggedIn(true)
+        if (response.data || status === "authenticated") setLoggedIn(true)
         else setLoggedIn(false)
       } catch (error) {
         console.error('Error checking auth:', error);
       }
     };
 
-    check();
-  }, [path]);
-
-  useEffect(() => {
-    if (status === "authenticated") {
-      setLoggedIn(true);
-    } else if (status === "unauthenticated") {
-      setLoggedIn(false);
-    }
-  }, [status]);
-
-  useEffect(() => {
-    const check = async () => {
-      try {
-        const response = await axios.get(`${url}/get_user`, {
-          withCredentials: true
-        });
-        if (response.data) {
-          setLoggedIn(true);
-        } else {
-          setLoggedIn(false);
-        }
-      } catch (error) {
-        console.error('Error checking auth:', error);
-      }
-    };
     check();
   }, [path]);
 
@@ -233,7 +205,7 @@ const Header = () => {
                   href={(status === "authenticated" || loggedIn) ? "/my-account" : "/signin"}
                   className="hidden px-7 py-3 text-base font-medium text-dark hover:opacity-70 dark:text-white lg:block"
                 >
-                  {(loggedIn) ? "My Account" : "Sign in"}
+                  {(status === "authenticated" || loggedIn) ? "My Account" : "Sign in"}
                 </Link>
                 {/* <Link
                   style={{ color: pathName === "/" ? "black" : "white", fontWeight: "bolder" }}
