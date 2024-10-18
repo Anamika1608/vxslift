@@ -8,12 +8,14 @@ import menuData from "./menuData";
 import { useSession } from "next-auth/react";
 import axios from "axios";
 import path from "path";
+import useAppContext from '../../context/authContext.js'
 const Header = () => {
   // Navbar toggle
   const [navbarOpen, setNavbarOpen] = useState(false);
   const navbarRef = useRef(null);
   const pathName = usePathname();
-  const [ loggedIn, setLoggedIn ] =  useState(false);
+  const { loggedIn, setLoggedIn } = useAppContext()
+  // const [ loggedIn, setLoggedIn ] =  useState(false); 
   const navbarToggleHandler = () => {
     setNavbarOpen((prev) => !prev);
   };
@@ -37,14 +39,16 @@ const Header = () => {
 
   useEffect(() => {
     const check = async () => {
-      try {
-        const response = await axios.get(`${url}/get_user`, {
-          withCredentials: true
-        })
-        if (response.data || status === "authenticated") setLoggedIn(true)
-        else setLoggedIn(false)
-      } catch (error) {
-        console.error('Error checking auth:', error);
+      if (loggedIn) {
+        try {
+          const response = await axios.get(`${url}/get_user`, {
+            withCredentials: true
+          })
+          if (response.data || status === "authenticated") setLoggedIn(true)
+          else setLoggedIn(false)
+        } catch (error) {
+          console.error('Error checking auth:', error);
+        }
       }
     };
 
@@ -207,13 +211,6 @@ const Header = () => {
                 >
                   {(status === "authenticated" || loggedIn) ? "My Account" : "Sign in"}
                 </Link>
-                {/* <Link
-                  style={{ color: pathName === "/" ? "black" : "white", fontWeight: "bolder" }}
-                  href="/signup"
-                  className="hidden px-7 py-3 text-base font-medium text-dark hover:opacity-70 dark:text-white md:block"
-                >
-                  Sign Up
-                </Link> */}
               </div>
             </div>
           </div>

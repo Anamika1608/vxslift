@@ -5,18 +5,20 @@ import OfferList from "./OfferList";
 import PricingBox from "./PricingBox";
 import axios from "axios";
 import { useSession } from "next-auth/react";
-
+import useAppContext from '../../context/authContext.js'
 const Pricing = () => {
   const url = process.env.NEXT_PUBLIC_BACKEND_URL;
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [userID, setUserID] = useState("");
+  const { loggedIn } = useAppContext()
   const [purchasedPlans, setPurchasedPlans] = useState({});
   const { data: session, status } = useSession();
 
   useEffect(() => {
     const getUser = async () => {
+     if(loggedIn){
       if (!session?.user) {
         try {
           const response = await axios.get(`${url}/get_user`, {
@@ -37,6 +39,7 @@ const Pricing = () => {
           console.error("Error fetching user by mail:", error);
         }
       }
+     }
     };
 
     if (!userID) {
@@ -60,32 +63,32 @@ const Pricing = () => {
   }, [url]);
 
  
-  const checkPurchased = async (planId) => {
-    try {
-      const response = await axios.post(`${url}/checkPurchasedPlan`, {
-        plan_id: planId,
-        user_id: userID,
-      });
-      return response.data.purchased; 
-    } catch (error) {
-      console.error("Error checking purchased plan:", error);
-      return false;
-    }
-  };
+  // const checkPurchased = async (planId) => {
+  //   try {
+  //     const response = await axios.post(`${url}/checkPurchasedPlan`, {
+  //       plan_id: planId,
+  //       user_id: userID,
+  //     });
+  //     return response.data.purchased; 
+  //   } catch (error) {
+  //     console.error("Error checking purchased plan:", error);
+  //     return false;
+  //   }
+  // };
 
-  useEffect(() => {
-    const checkAllPurchasedPlans = async () => {
-      if (userID && plans.length > 0) {
-        const purchasedStatus = {};
-        for (const plan of plans) {
-          purchasedStatus[plan._id] = await checkPurchased(plan._id);
-        }
-        setPurchasedPlans(purchasedStatus);
-      }
-    };
+  // useEffect(() => {
+  //   const checkAllPurchasedPlans = async () => {
+  //     if (userID && plans.length > 0) {
+  //       const purchasedStatus = {};
+  //       for (const plan of plans) {
+  //         purchasedStatus[plan._id] = await checkPurchased(plan._id);
+  //       }
+  //       setPurchasedPlans(purchasedStatus);
+  //     }
+  //   };
 
-    checkAllPurchasedPlans();
-  }, [plans, userID]);
+  //   checkAllPurchasedPlans();
+  // }, [plans, userID]);
 
   if (loading) return <div>Loading pricing plans...</div>;
   if (error) return <div>{error}</div>;
@@ -104,6 +107,7 @@ const Pricing = () => {
           {plans.map((plan, index) => (
             <PricingBox
               key={plan._id}
+              planId = {plan._id}
               packageName={plan.name}
               price={plan.pricing}
               duration="onetime"
@@ -128,12 +132,12 @@ const Pricing = () => {
                 status={index === 2 ? "active" : "inactive"}
               />
 
-              {purchasedPlans[plan._id] && (
+              {/* {purchasedPlans[plan._id] && (
                 <div className="text-green-600 mt-4">
                   You have already purchased this plan.
                   Check in <a href="/my-account" className="underline">My Account</a>
                 </div>
-              )}
+              )} */}
             </PricingBox>
           ))}
         </div>

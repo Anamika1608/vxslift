@@ -2,19 +2,23 @@
 
 import { ThemeProvider } from "next-themes";
 import { SessionProvider } from "next-auth/react"
+import { AuthProvider } from '../context/authContext.js'
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     
- <SessionProvider>
+    <AuthProvider>
 
-      <ThemeProvider attribute="class" enableSystem={false} defaultTheme="dark">
-        {children}
-      </ThemeProvider>
+      <SessionProvider>
 
-    </SessionProvider>
+        <ThemeProvider attribute="class" enableSystem={false} defaultTheme="dark">
+          {children}
+        </ThemeProvider>
 
-   
+      </SessionProvider>
+
+    </AuthProvider>
+
 
   );
 }

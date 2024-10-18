@@ -7,7 +7,7 @@ import axios from "axios";
 import { useEffect , useState} from 'react';
 import { redirect, useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
-
+import useAppContext from '../../context/authContext.js'
 const url = process.env.NEXT_PUBLIC_BACKEND_URL
 
 const SigninPage = () => {
@@ -16,8 +16,9 @@ const SigninPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loggedIn , setLoggedIn] = useState(false)
-
+  const {loggedIn , setLoggedIn} = useAppContext()
+  // const [loggedIn , setLoggedIn] = useState(false)
+ 
   useEffect(() => {
     if (status === 'authenticated' && session) {
       handleGoogleLogin();
@@ -71,11 +72,9 @@ const SigninPage = () => {
         toast.success('Logged in successfully !'); 
         router.push("/");
       } else {
-        // toast.error('Failed to login with Google'); 
         console.error("Login failed:", res.data.message);
       }
     } catch (error) {
-      toast.error('Failed to login with Google'); 
       console.error("An error occurred during login:", error);
     } finally {
       setIsLoading(false);
