@@ -4,14 +4,17 @@ import { useRouter } from 'next/navigation';
 import { Metadata } from "next";
 import axios from "axios";
 import { useState } from "react";
+import { toast } from 'react-hot-toast';
+import useAppContext from '../../context/authContext.js'
 
-const url = 'http://localhost:8000'
+const url = process.env.NEXT_PUBLIC_BACKEND_URL
 
 const SignupPage = () => {
   const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const {loggedIn , setLoggedIn} = useAppContext()
 
   const registerUser = async (e) => {
     e.preventDefault();
@@ -23,11 +26,14 @@ const SignupPage = () => {
       );
 
       if (response.status === 201) {
+        setLoggedIn(true)
+        toast.success('You have successfully registered'); 
         router.push("/");
       } else {
         console.error("Unexpected response:", response);
       }
     } catch (error) {
+      toast.error("Failed to register the user"); 
       console.log(error);
       console.error("Error registering user:", error.response?.data || error.message);
     }

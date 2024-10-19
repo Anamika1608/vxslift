@@ -12,34 +12,9 @@ import Testimonials from "@/components/Testimonials";
 import Video from "@/components/Video";
 import { Metadata } from "next";
 import dynamic from "next/dynamic";
-import { resolve } from "path";
-import { useEffect } from "react";
 
-// export const metadata: Metadata = {
-//   title: "Free Next.js Template for Startup and SaaS",
-//   description: "This is Home for Startup Nextjs Template",
-//   // other metadata
-// };
 
 const Home = () => {
-
-  const loadScript = (src: string) => {
-    return new Promise((resolve) => {
-      const script = document.createElement('script');
-      script.src = src;
-      script.onload = () => {
-        resolve(true);
-      }
-      script.onerror = () => {
-        resolve(false)
-      }
-      document.body.appendChild(script);
-    })
-  }
-
-  useEffect (()=>{
-    loadScript('https://checkout.razorpay.com/v1/checkout.js')
-  },[])
 
   return (
     <>

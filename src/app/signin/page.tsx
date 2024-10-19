@@ -6,8 +6,9 @@ import { useSession } from "next-auth/react";
 import axios from "axios";
 import { useEffect , useState} from 'react';
 import { redirect, useRouter } from 'next/navigation';
-
-const url = 'http://localhost:8000'
+import { toast } from 'react-hot-toast';
+import useAppContext from '../../context/authContext.js'
+const url = process.env.NEXT_PUBLIC_BACKEND_URL
 
 const SigninPage = () => {
   const router = useRouter();
@@ -15,27 +16,46 @@ const SigninPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loggedIn , setLoggedIn] = useState(false)
-
+  const {loggedIn , setLoggedIn} = useAppContext()
+  // const [loggedIn , setLoggedIn] = useState(false)
+ 
   useEffect(() => {
     if (status === 'authenticated' && session) {
       handleGoogleLogin();
     }
   }, [status, session]);
 
+  useEffect(() => {
+    if (status === 'authenticated' && session) {
+      router.push('/');
+    }
+  }, [status, session]);
+  
   const handleSignin = async () => {
     setIsLoading(true);
-    await signIn('google');
+    try {
+      const result = await signIn('google', { redirect: false });
+      if (!result?.ok) {
+        console.error('Failed to sign in');
+      }
+    } catch (error) {
+      console.error('Error during sign in:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
+  
 
   const handleLogin = async ()=>{
     try {
       const response = await axios.post(`${url}/login` , {email,password},{withCredentials : true})
       if(response.status == 200) {
+        toast.success('Logged in successfully !'); 
         setLoggedIn(true)
         router.push('/')
       }
     } catch (error) {
+      toast.error('Wrong email or password'); 
       console.log("Error in getting logged in") 
     }
   }
@@ -49,6 +69,7 @@ const SigninPage = () => {
       }, { withCredentials: true });
 
       if (res.data.success) {
+        toast.success('Logged in successfully !'); 
         router.push("/");
       } else {
         console.error("Login failed:", res.data.message);

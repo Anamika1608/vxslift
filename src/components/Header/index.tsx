@@ -7,31 +7,19 @@ import ThemeToggler from "./ThemeToggler";
 import menuData from "./menuData";
 import { useSession } from "next-auth/react";
 import axios from "axios";
-
+import path from "path";
+import useAppContext from '../../context/authContext.js'
 const Header = () => {
   // Navbar toggle
   const [navbarOpen, setNavbarOpen] = useState(false);
-  const [loggedIn , setLoggedIn] = useState(false);
   const navbarRef = useRef(null);
   const pathName = usePathname();
+  const { loggedIn, setLoggedIn } = useAppContext()
+  // const [ loggedIn, setLoggedIn ] =  useState(false); 
   const navbarToggleHandler = () => {
     setNavbarOpen((prev) => !prev);
   };
 
-  // Close hamburger when clicking outside or on the cross button
-  // useEffect(() => {
-  //   const handleClickOutside = (event) => {
-  //     if (navbarRef.current && !navbarRef.current.contains(event.target)) {
-  //       setNavbarOpen(false);
-  //     }
-  //   };
-  //   window.addEventListener("mousedown", handleClickOutside);
-  //   return () => {
-  //     window.removeEventListener("mousedown", handleClickOutside);
-  //   };
-  // }, []);
-
-  // Sticky Navbar
   const [sticky, setSticky] = useState(false);
   const handleStickyNavbar = () => {
     if (window.scrollY >= 80) {
@@ -41,29 +29,31 @@ const Header = () => {
     }
   };
   const { data: session, status } = useSession();
-  // if(status == "loading") return (<Loader/>)
 
 
   useEffect(() => {
     window.addEventListener("scroll", handleStickyNavbar);
   });
 
-
-  const url = 'http://localhost:8000'
+  const url = process.env.NEXT_PUBLIC_BACKEND_URL
 
   useEffect(() => {
     const check = async () => {
-      try {
-        const response = await axios.post(`${url}/check_auth`, { withCredentials: true });
-        console.log(response.data);
-        setLoggedIn(response.data.isLoggedIn);
-      } catch (error) {
-        console.error('Error checking auth:', error);
+      if (loggedIn) {
+        try {
+          const response = await axios.get(`${url}/get_user`, {
+            withCredentials: true
+          })
+          if (response.data || status === "authenticated") setLoggedIn(true)
+          else setLoggedIn(false)
+        } catch (error) {
+          console.error('Error checking auth:', error);
+        }
       }
     };
 
     check();
-  }, []);
+  }, [path]);
 
   // submenu handler
   const [openIndex, setOpenIndex] = useState(-1);
@@ -202,10 +192,10 @@ const Header = () => {
                     <li className="group relative block lg:hidden">
                       <Link
                         style={{ color: "black", fontWeight: "bolder" }}
-                        href={status === "authenticated" ? "/my-account" : "/signin"}
+                        href={(status === "authenticated" || loggedIn) ? "/my-account" : "/signin"}
                         className="flex py-4 text-base lg:mr-0 lg:inline-flex lg:px-0 lg:py-6 px-6 py-4 sm:text-black text-white"
                       >
-                        {(status === "authenticated" || loggedIn ) ? "My Account" : "Sign in"}
+                        {(status === "authenticated" || loggedIn) ? "My Account" : "Sign in"}
                       </Link>
                     </li>
 
@@ -216,19 +206,11 @@ const Header = () => {
               <div className="flex items-center justify-end pr-16 lg:pr-0">
                 <Link
                   style={{ color: pathName === "/" ? "black" : "white", fontWeight: "bolder" }}
-                  href={status === "authenticated" ? "/my-account" : "/signin"}
-                  // onClick={status === "authenticated" ? handleSignOut : null} 
+                  href={(status === "authenticated" || loggedIn) ? "/my-account" : "/signin"}
                   className="hidden px-7 py-3 text-base font-medium text-dark hover:opacity-70 dark:text-white lg:block"
                 >
                   {(status === "authenticated" || loggedIn) ? "My Account" : "Sign in"}
                 </Link>
-                {/* <Link
-                  style={{ color: pathName === "/" ? "black" : "white", fontWeight: "bolder" }}
-                  href="/signup"
-                  className="hidden px-7 py-3 text-base font-medium text-dark hover:opacity-70 dark:text-white md:block"
-                >
-                  Sign Up
-                </Link> */}
               </div>
             </div>
           </div>
