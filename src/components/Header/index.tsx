@@ -5,14 +5,21 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
 import ThemeToggler from "./ThemeToggler";
 import menuData from "./menuData";
-import { useSession } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import axios from "axios";
 import path from "path";
+import { toast } from 'react-hot-toast';
+import { ChevronDown, LogOut } from 'lucide-react';
 import useAppContext from '../../context/authContext.js'
+import { useRouter } from "next/navigation";
+
 const Header = () => {
   // Navbar toggle
-  const [windowWidth, setWindowWidth] = useState(990); 
+  const [isOpen, setIsOpen] = useState(false);
+  const router = useRouter();
+  const [windowWidth, setWindowWidth] = useState(990);
   const [navbarOpen, setNavbarOpen] = useState(false);
+  const [userID, setUserID] = useState("");
   const navbarRef = useRef(null);
   const pathName = usePathname();
   const { loggedIn, setLoggedIn } = useAppContext()
@@ -30,7 +37,6 @@ const Header = () => {
     }
   };
   const { data: session, status } = useSession();
-
   useEffect(() => {
     setWindowWidth(window.innerWidth);
 
@@ -73,6 +79,53 @@ const Header = () => {
       setOpenIndex(-1);
     } else {
       setOpenIndex(index);
+    }
+  };
+
+  useEffect(() => {
+    const getUser = async () => {
+      if (!session?.user) {
+        try {
+          const response = await axios.get(`${url}/get_user`, {
+            withCredentials: true,
+          });
+          setUserID(response.data.id);
+          setLoggedIn(true);
+        } catch (error) {
+          console.error('Error fetching user:', error);
+        }
+      } else {
+        try {
+          const response = await axios.get(`${url}/findUserByMail`, {
+            params: { mail: session.user.email },
+            withCredentials: true,
+          });
+          setUserID(response.data.userId);
+          setLoggedIn(true);
+        } catch (error) {
+          console.error('Error fetching user by mail:', error);
+        }
+      }
+    };
+
+    getUser();
+  }, [session, url]);
+
+  const handleSignOut = async (e) => {
+    e.preventDefault();
+    if (session?.user) {
+      toast.success('Logged out successfully!');
+      setTimeout(() => {
+        signOut({
+          callbackUrl: '/',
+        });
+      }, 500);
+    }
+    else {
+      await axios.get(`${url}/logout`);
+      setLoggedIn(false);
+      toast.success('Logged out successfully!');
+      router.push('/')
     }
   };
 
@@ -201,27 +254,92 @@ const Header = () => {
                     ))}
 
                     <li className="group relative block lg:hidden">
-                      <Link
-                        style={{ color: "black", fontWeight: "bolder" }}
-                        href={(status === "authenticated" || loggedIn) ? "/my-account" : "/signin"}
-                        className="flex py-4 text-base lg:mr-0 lg:inline-flex lg:px-0 lg:py-6 px-6 py-4 sm:text-black text-white"
-                      >
-                        {(status === "authenticated" || loggedIn) ? "My Account" : "Sign in"}
-                      </Link>
+                      {!(status === 'authenticated' || loggedIn) ? (
+                        <Link
+                          href="/signin"
+                          style={{ color: "black", fontWeight: "bolder" }}
+                          className="flex py-4 text-base lg:mr-0 lg:inline-flex lg:px-0 lg:py-6 px-6 py-4 sm:text-black text-white"
+                        >
+                          Sign in
+                        </Link>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => setIsOpen(!isOpen)}
+                            style={{ color: "black", fontWeight: "bolder" }}
+                            className="flex items-center py-4 text-base lg:mr-0 lg:inline-flex lg:px-0 lg:py-6 px-6 py-4 sm:text-black text-white w-full"
+                          >
+                            My Account
+                            <ChevronDown
+                              className={`ml-2 h-4 w-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''
+                                }`}
+                            />
+                          </button>
+
+                          {isOpen && (
+                            <div className=" px-2">
+                              <Link
+                                href='/my-account'
+                                className="flex items-center text-black font-semibold w-full py-3 bg-neutral-200 hover:bg-neutral-300 px-6 rounded-xl"
+                              >
+                                Check Plans
+                              </Link>
+                              <button
+                                onClick={handleSignOut}
+                                className="flex items-center gap-2 mt-2 py-3 text-base text-red-600 w-full font-semibold  bg-neutral-200 hover:bg-neutral-300 px-6  rounded-xl"
+                              >
+                                <LogOut className="w-4 h-4" />
+                                Sign out
+                              </button>
+                            </div>
+                          )}
+                        </>
+                      )}
                     </li>
 
                   </ul>
                 </nav>
-
               </div>
+
               <div className="flex items-center justify-end pr-16 lg:pr-0">
-                <Link
-                  style={{ color: pathName === "/" ? "black" : "white", fontWeight: "bolder" }}
-                  href={(status === "authenticated" || loggedIn) ? "/my-account" : "/signin"}
-                  className="hidden px-7 py-3 text-base font-medium text-dark hover:opacity-70 dark:text-white lg:block"
-                >
-                  {(status === "authenticated" || loggedIn) ? "My Account" : "Sign in"}
-                </Link>
+                {status === "authenticated" || loggedIn ? (
+                  <div className="relative group">
+                    <Link
+                      href="/my-account"
+                      className="hidden px-7 py-3 text-base font-medium hover:opacity-70 lg:flex items-center gap-2"
+                      style={{
+                        color: pathName === "/" ? "black" : "white",
+                        fontWeight: "bolder"
+                      }}
+                    >
+                      My Account
+                      <ChevronDown className="w-4 h-4" />
+                    </Link>
+
+                    <div className="absolute right-0 mt-2 w-48 invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all duration-300">
+                      <div className="py-1 bg-white rounded-md shadow-lg">
+                        <button
+                          onClick={handleSignOut}
+                          className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2 text-red-600 font-semibold"
+                        >
+                          <LogOut className="w-4 h-4" />
+                          Sign out
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <Link
+                    href="/signin"
+                    className="hidden px-7 py-3 text-base font-medium hover:opacity-70 lg:block"
+                    style={{
+                      color: pathName === "/" ? "black" : "white",
+                      fontWeight: "bolder"
+                    }}
+                  >
+                    Sign in
+                  </Link>
+                )}
               </div>
             </div>
           </div>
