@@ -11,6 +11,7 @@ import path from "path";
 import useAppContext from '../../context/authContext.js'
 const Header = () => {
   // Navbar toggle
+  const [windowWidth, setWindowWidth] = useState(990); 
   const [navbarOpen, setNavbarOpen] = useState(false);
   const navbarRef = useRef(null);
   const pathName = usePathname();
@@ -30,6 +31,16 @@ const Header = () => {
   };
   const { data: session, status } = useSession();
 
+  useEffect(() => {
+    setWindowWidth(window.innerWidth);
+
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     window.addEventListener("scroll", handleStickyNavbar);
@@ -142,7 +153,7 @@ const Header = () => {
                               color:
                                 pathName === "/"
                                   ? "black"
-                                  : window.innerWidth > 990
+                                  : windowWidth > 990
                                     ? "white"
                                     : "black",
                               fontWeight: "bolder",
